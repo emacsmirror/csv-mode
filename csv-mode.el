@@ -4,7 +4,7 @@
 
 ;; Author: "Francis J. Wright" <F.J.Wright@qmul.ac.uk>
 ;; Maintainer: emacs-devel@gnu.org
-;; Version: 1.13
+;; Version: 1.14
 ;; Package-Requires: ((emacs "24.1") (cl-lib "0.5"))
 ;; Keywords: convenience
 
@@ -830,11 +830,15 @@ the mode line after `csv-field-index-delay' seconds of Emacs idle time."
 
 (defun csv--field-index ()
   (save-excursion
-    (let ((lbp (line-beginning-position)) (field 1))
-      (while (re-search-backward csv-separator-regexp lbp 'move)
-	;; Move as far as possible, i.e. to beginning of line.
+    (let ((start (point))
+	  (field 0))
+      (beginning-of-line)
+      (while (< (point) start)
+	(csv-end-of-field)
+	(unless (eolp)
+	  (forward-char 1))
 	(setq field (1+ field)))
-      (unless (csv-not-looking-at-record) field))))
+      field)))
 
 (defun csv-field-index ()
   "Construct `csv-field-index-string' to display in mode line.
