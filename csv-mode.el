@@ -1370,7 +1370,8 @@ If there is already a header line, then unset the header line."
       (jit-lock-fontify-now (point) (line-end-position))
       ;; Not sure why it is sometimes nil!
       (move-to-column (or csv--header-hscroll 0))
-      (let ((str (buffer-substring (point) (line-end-position)))
+      (let ((str (replace-regexp-in-string
+		  "%" "%%" (buffer-substring (point) (line-end-position))))
             (i 0))
         (while (and i (< i (length str)))
           (let ((prop (get-text-property i 'display str)))
