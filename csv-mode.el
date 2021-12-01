@@ -149,7 +149,7 @@ The first is used when inserting a field separator into the buffer.
 All must be different from the field quote characters, `csv-field-quotes'.
 
 Changing this variable with `setq' won't affect the current Emacs
-session.  Use `set-variable' instead if that is required."
+session.  Use `customize-set-variable' instead if that is required."
   ;; Suggested by Eckhard Neber <neber@mwt.e-technik.uni-ulm.de>
   :type '(repeat string)
   ;; FIXME: Character would be better, but in Emacs 21.3 does not display
