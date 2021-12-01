@@ -4,7 +4,7 @@
 
 ;; Author: "Francis J. Wright" <F.J.Wright@qmul.ac.uk>
 ;; Maintainer: emacs-devel@gnu.org
-;; Version: 1.16
+;; Version: 1.17
 ;; Package-Requires: ((emacs "24.1") (cl-lib "0.5"))
 ;; Keywords: convenience
 
@@ -146,7 +146,10 @@ Set by customizing `csv-separators' -- do not set directly!")
 For example: (\",\"), the default, or (\",\" \";\" \":\").
 Neighbouring fields may be separated by any one of these characters.
 The first is used when inserting a field separator into the buffer.
-All must be different from the field quote characters, `csv-field-quotes'."
+All must be different from the field quote characters, `csv-field-quotes'.
+
+Changing this variable with `setq' won't affect the current Emacs
+session.  Use `set-variable' instead if that is required."
   ;; Suggested by Eckhard Neber <neber@mwt.e-technik.uni-ulm.de>
   :type '(repeat string)
   ;; FIXME: Character would be better, but in Emacs 21.3 does not display
