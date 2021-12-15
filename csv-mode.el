@@ -238,7 +238,8 @@ Auto-alignment means left align text and right align numbers."
 
 (defcustom csv-align-padding 1
   "Aligned field spacing: must be a positive integer.
-Number of spaces used by `csv-align-mode' and `csv-align-fields' after separators."
+Number of spaces used by `csv-align-mode' and `csv-align-fields'
+after separators."
   :type 'integer)
 
 (defcustom csv-header-lines 0
