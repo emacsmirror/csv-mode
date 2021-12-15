@@ -674,8 +674,9 @@ point or marker arguments, BEG and END, delimiting the region."
       (while (not ended)
 	(cond ((not (eq (char-syntax (following-char)) ?\"))
 	       (forward-char 1))
-	      ;; Quotes inside quoted strings are quoted by doubling
-	      ;; the quote char: a,"b""c,",d
+	      ;; According to RFC-4180 (sec 2.7), quotes inside quoted strings
+	      ;; are quoted by doubling the quote char: a,"b""c,",d
+	      ;; FIXME: Maybe we should handle this via syntax-propertize?
 	      ((eq (char-syntax (char-after (1+ (point)))) ?\")
 	       (forward-char 2))
 	      (t
