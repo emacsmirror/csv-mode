@@ -677,7 +677,8 @@ point or marker arguments, BEG and END, delimiting the region."
 	      ;; According to RFC-4180 (sec 2.7), quotes inside quoted strings
 	      ;; are quoted by doubling the quote char: a,"b""c,",d
 	      ;; FIXME: Maybe we should handle this via syntax-propertize?
-	      ((eq (char-syntax (char-after (1+ (point)))) ?\")
+              ((let ((c (char-after (1+ (point)))))
+                 (and c (eq (char-syntax c) ?\")))
 	       (forward-char 2))
 	      (t
 	       (setq ended t))))))
