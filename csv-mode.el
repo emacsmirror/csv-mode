@@ -1321,7 +1321,10 @@ point is assumed to be at the beginning of the line."
 	(split-string row-text csv-separator-regexp)
       (save-excursion
 	(while (< (setq field-start (point)) row-end-position)
-	  (csv-forward-field 1)
+          ;; csv-forward-field will skip a separator if point is on
+          ;; it, and we'll miss an empty field
+          (unless (memq (following-char) csv-separator-chars)
+	    (csv-forward-field 1))
 	  (push
 	   (buffer-substring-no-properties field-start (point))
 	   fields)
