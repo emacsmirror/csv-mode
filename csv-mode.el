@@ -1,11 +1,11 @@
 ;;; csv-mode.el --- Major mode for editing comma/char separated values  -*- lexical-binding: t -*-
 
-;; Copyright (C) 2003, 2004, 2012-2020  Free Software Foundation, Inc
+;; Copyright (C) 2003, 2004, 2012-2022 Free Software Foundation, Inc
 
 ;; Author: "Francis J. Wright" <F.J.Wright@qmul.ac.uk>
 ;; Maintainer: emacs-devel@gnu.org
 ;; Version: 1.19
-;; Package-Requires: ((emacs "24.1") (cl-lib "0.5"))
+;; Package-Requires: ((emacs "27.1") (cl-lib "0.5"))
 ;; Keywords: convenience
 
 ;; This package is free software; you can redistribute it and/or modify
@@ -119,7 +119,9 @@
 
 ;;; Code:
 
-(eval-when-compile (require 'cl-lib))
+(eval-when-compile
+  (require 'cl-lib)
+  (require 'subr-x))
 
 (defgroup CSV nil
   "Major mode for editing files of comma-separated value type."
@@ -163,12 +165,14 @@ session.  Use `customize-set-variable' instead if that is required."
                      (error "%S is already a quote" x)))
 	       value)
 	 (custom-set-default variable value)
-	 (setq csv-separator-chars (mapcar #'string-to-char value)
-	       csv--skip-chars (apply #'concat "^\n" csv-separators)
-	       csv-separator-regexp (apply #'concat `("[" ,@value "]"))
-	       csv-font-lock-keywords
-	       ;; NB: csv-separator-face variable evaluates to itself.
-	       `((,csv-separator-regexp (0 'csv-separator-face))))))
+         (setq csv-separator-chars (mapcar #'string-to-char value))
+         (setq csv--skip-chars
+               (apply #'concat "^\n"
+                      (mapcar (lambda (s) (concat "\\" s)) value)))
+         (setq csv-separator-regexp (regexp-opt value))
+         (setq csv-font-lock-keywords
+               ;; NB: csv-separator-face variable evaluates to itself.
+               `((,csv-separator-regexp (0 'csv-separator-face))))))
 
 (defcustom csv-field-quotes '("\"")
   "Field quotes: a list of *single-character* strings.
@@ -367,6 +371,23 @@ It must be either a string or nil."
      (string-to-char string) "<" csv-mode-syntax-table)
     (modify-syntax-entry ?\n ">" csv-mode-syntax-table))
   (setq csv-comment-start string))
+
+(defvar csv--set-separator-history nil)
+
+(defun csv-set-separator (sep)
+  "Set the CSV separator in the current buffer to SEP."
+  (interactive (list (read-char-from-minibuffer
+                      "Separator: " nil 'csv--set-separator-history)))
+  (when (and (boundp 'csv-field-quotes)
+             (member (string sep) csv-field-quotes))
+    (error "%c is already a quote" sep))
+  (setq-local csv-separators (list (string sep)))
+  (setq-local csv-separator-chars (list sep))
+  (setq-local csv--skip-chars (format "^\n\\%c" sep))
+  (setq-local csv-separator-regexp (regexp-quote (string sep)))
+  (setq-local csv-font-lock-keywords
+              `((,csv-separator-regexp (0 'csv-separator-face))))
+  (font-lock-refresh-defaults))
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.[Cc][Ss][Vv]\\'" . csv-mode))
@@ -1728,6 +1749,104 @@ setting works better)."
     (jit-lock-unregister #'csv--jit-align)
     (csv--jit-unalign (point-min) (point-max))))
   (csv--header-flush))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;  Separator guessing
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defvar csv--preferred-separators
+  '(?, ?\; ?\t)
+  "Preferred separator characters in case of a tied score.")
+
+(defun csv-guess-set-separator ()
+  "Guess and set the CSV separator of the current buffer.
+
+Add it to the mode hook to have CSV mode guess and set the
+separator automatically when visiting a buffer:
+
+  (add-hook \\='csv-mode-hook \\='csv-guess-set-separator)"
+  (interactive)
+  (let ((sep (csv-guess-separator
+              (buffer-substring-no-properties
+               (point-min)
+               ;; We're probably only going to look at the first 2048
+               ;; or so chars, but take more than we probably need to
+               ;; minimize the chance of breaking the input in the
+               ;; middle of a (long) row.
+               (min 8192 (point-max)))
+              2048)))
+    (when sep
+      (csv-set-separator sep))))
+
+(defun csv-guess-separator (text &optional cutoff)
+  "Return a guess of which character is the CSV separator in TEXT."
+  (let ((best-separator nil)
+        (best-score 0))
+    (dolist (candidate (csv--separator-candidates text cutoff))
+      (let ((candidate-score
+             (csv--separator-score candidate text cutoff)))
+        (when (or (> candidate-score best-score)
+                  (and (= candidate-score best-score)
+                       (member candidate csv--preferred-separators)))
+          (setq best-separator candidate)
+          (setq best-score candidate-score))))
+    best-separator))
+
+(defun csv--separator-candidates (text &optional cutoff)
+  "Return a list of candidate CSV separators in TEXT.
+When CUTOFF is passed, look only at the first CUTOFF number of characters."
+  (let ((chars (make-hash-table)))
+    (dolist (c (string-to-list
+                (if cutoff
+                    (substring text 0 (min cutoff (length text)))
+                  text)))
+      (when (and (not (gethash c chars))
+                 (or (= c ?\t)
+                     (and (not (member c '(?. ?/ ?\" ?')))
+                          (not (member (get-char-code-property c 'general-category)
+                                       '(Lu Ll Lt Lm Lo Nd Nl No Ps Pe Cc Co))))))
+        (puthash c t chars)))
+    (hash-table-keys chars)))
+
+(defun csv--separator-score (separator text &optional cutoff)
+  "Return a score on how likely SEPARATOR is a separator in TEXT.
+
+When CUTOFF is passed, stop the calculation at the next whole
+line after having read CUTOFF number of characters.
+
+The scoring is based on the idea that most CSV data is tabular,
+i.e. separators should appear equally often on each line.
+Furthermore, more commonly appearing characters are scored higher
+than those who appear less often.
+
+Adapted from the paper \"Wrangling Messy CSV Files by Detecting
+Row and Type Patterns\" by Gerrit J.J. van den Burg , Alfredo
+Nazábal, and Charles Sutton: https://arxiv.org/abs/1811.11242."
+  (let ((groups
+         (with-temp-buffer
+           (csv-set-separator separator)
+           (save-excursion
+             (insert text))
+           (let ((groups (make-hash-table))
+                 (chars-read 0))
+             (while (and (/= (point) (point-max))
+                         (or (not cutoff)
+                             (< chars-read cutoff)))
+               (let* ((lep (line-end-position))
+                      (nfields (length (csv--collect-fields lep))))
+                 (cl-incf (gethash nfields groups 0))
+                 (cl-incf chars-read (- lep (point)))
+                 (goto-char (+ lep 1))))
+             groups)))
+        (sum 0))
+    (maphash
+     (lambda (length num)
+       (cl-incf sum (* num (/ (- length 1) (float length)))))
+     groups)
+    (let ((unique-groups (hash-table-count groups)))
+      (if (= 0 unique-groups)
+          0
+        (/ sum unique-groups)))))
 
 ;;; TSV support
 
