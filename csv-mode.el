@@ -213,7 +213,7 @@ FIELD-QUOTES should be a list of single-character strings."
 (defvar csv-comment-start nil
   "String that starts a comment line, or nil if no comment syntax.
 Such comment lines are ignored by CSV mode commands.
-This variable is buffer local\; its default value is that of
+This variable is buffer local; its default value is that of
 `csv-comment-start-default'.  It is set by the function
 `csv-set-comment-start' -- do not set it directly!")
 
@@ -348,7 +348,7 @@ It must be either a string or nil."
    (list (edit-and-eval-command
 	  "Comment start (string or nil): " csv-comment-start)))
   ;; Paragraph means a group of contiguous records:
-  (set (make-local-variable 'paragraph-separate) "[:space:]*$") ; White space.
+  (set (make-local-variable 'paragraph-separate) "[[:space:]]*$") ; White space.
   (set (make-local-variable 'paragraph-start) "\n");Must include \n explicitly!
   ;; Remove old comment-start/end if available
   (with-syntax-table text-mode-syntax-table
@@ -389,7 +389,7 @@ Usually they sort in order of ascending sort key.")
       (remove-from-invisibility-spec 'csv)
     (add-to-invisibility-spec 'csv))
   (message "Separators in aligned records will be %svisible \
-\(after re-aligning if soft\)"
+\(after re-aligning if soft)"
 	   (if (memq 'csv buffer-invisibility-spec) "in" ""))
   (redraw-frame (selected-frame)))
 
@@ -473,10 +473,10 @@ Assumes point is at beginning of line."
 Signal an error if the buffer is read-only.
 If TYPE is noarg then return a list (beg end).
 Otherwise, return a list (arg beg end), where arg is:
-  the raw prefix argument by default\;
-  a single field index if TYPE is single\;
+  the raw prefix argument by default;
+  a single field index if TYPE is single;
   a list of field indices or index ranges if TYPE is multiple.
-Field defaults to the current prefix arg\; if not set, prompt user.
+Field defaults to the current prefix arg; if not set, prompt user.
 
 A field index list consists of positive or negative integers or ranges,
 separated by any non-integer characters.  A range has the form m-n,
@@ -604,7 +604,7 @@ Field indices increase from 1 on the left or decrease from -1 on the right.
 A prefix argument specifies a single field, otherwise prompt for field index.
 Ignore blank and comment lines.  The variable `sort-fold-case'
 determines whether alphabetic case affects the sort order.
-When called non-interactively, FIELD is a single field index\;
+When called non-interactively, FIELD is a single field index;
 BEG and END specify the region to sort."
   ;; (interactive "*P\nr")
   (interactive (csv-interactive-args 'single))
@@ -624,7 +624,7 @@ Specified non-null field must contain a number in each line of the region,
 which may begin with \"0x\" or \"0\" for hexadecimal and octal values.
 Otherwise, the number is interpreted according to sort-numeric-base.
 Ignore blank and comment lines.
-When called non-interactively, FIELD is a single field index\;
+When called non-interactively, FIELD is a single field index;
 BEG and END specify the region to sort."
   ;; (interactive "*P\nr")
   (interactive (csv-interactive-args 'single))
@@ -968,14 +968,14 @@ Ignore blank and comment lines."
 (defun csv-yank-fields (field beg end)
   "Yank fields as the ARGth field of each line in the region.
 ARG may be arbitrarily large and records are extended as necessary.
-If not set, the region defaults to the CSV records around point\;
+If not set, the region defaults to the CSV records around point;
 if point is not in a CSV record then offer to yank as a new table.
 The fields yanked are those last killed by `csv-kill-fields'.
 Fields are separated by `csv-separators' and null fields are allowed anywhere.
 Field indices increase from 1 on the left or decrease from -1 on the right.
 A prefix argument specifies a single field, otherwise prompt for field index.
 Ignore blank and comment lines.  When called non-interactively, FIELD
-is a single field index\; BEG and END specify the region to process."
+is a single field index; BEG and END specify the region to process."
   ;; (interactive "*P\nr")
   (interactive (condition-case err
 		   (csv-interactive-args 'single)
@@ -1072,10 +1072,10 @@ Unalign first (see `csv-unalign-fields').  Ignore blank and comment lines.
 In hard-aligned records, separators become invisible whenever
 `buffer-invisibility-spec' is non-nil.  In soft-aligned records, make
 separators invisible if and only if `buffer-invisibility-spec' is
-non-nil when the records are aligned\; this can be changed only by
+non-nil when the records are aligned; this can be changed only by
 re-aligning.  \(Unaligning always makes separators visible.)
 
-When called non-interactively, use hard alignment if HARD is non-nil\;
+When called non-interactively, use hard alignment if HARD is non-nil;
 BEG and END specify the region to align.
 If there is no selected region, default to the whole buffer."
   (interactive (cons current-prefix-arg
@@ -1205,7 +1205,7 @@ Undo soft alignment introduced by `csv-align-fields'.  If invoked with
 an argument then also remove all spaces and tabs around separators.
 Also make all invisible separators visible again.
 Ignore blank and comment lines.  When called non-interactively, remove
-spaces and tabs if HARD non-nil\; BEG and END specify region to unalign.
+spaces and tabs if HARD non-nil; BEG and END specify region to unalign.
 If there is no selected region, default to the whole buffer."
   (interactive (cons current-prefix-arg
                      (if (use-region-p)
