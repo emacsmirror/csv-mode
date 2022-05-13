@@ -4,7 +4,7 @@
 
 ;; Author: "Francis J. Wright" <F.J.Wright@qmul.ac.uk>
 ;; Maintainer: emacs-devel@gnu.org
-;; Version: 1.19
+;; Version: 1.20
 ;; Package-Requires: ((emacs "27.1") (cl-lib "0.5"))
 ;; Keywords: convenience
 
@@ -1377,8 +1377,12 @@ If there is already a header line, then unset the header line."
       (overlay-put csv--header-line 'modification-hooks
                    '(csv--header-flush)))
     (csv--header-flush)
+    ;; These are introduced in Emacs 29.
+    (unless (boundp 'header-line-indent)
+      (setq-local header-line-indent ""
+                  header-line-indent-width 0))
     (setq header-line-format
-          '(:eval (csv--header-string)))))
+          '("" header-line-indent (:eval (csv--header-string))))))
 
 (defun csv--header-flush (&rest _)
   ;; Force re-computation of the header-line.
@@ -1412,9 +1416,10 @@ If there is already a header line, then unset the header line."
                         (nexti (next-single-property-change i 'display str))
                         (newprop
                          `(space :align-to
-                                 ,(if (numberp x)
-                                      (- x (or csv--header-hscroll 0))
-                                    `(- ,x csv--header-hscroll)))))
+                                 (+ ,(if (numberp x)
+                                         (- x (or csv--header-hscroll 0))
+                                       `(- ,x csv--header-hscroll))
+                                    header-line-indent-width))))
                    (put-text-property i (or nexti (length str))
                                       'display newprop str)
                    (setq i nexti))))
@@ -1742,6 +1747,8 @@ setting works better)."
     (add-to-invisibility-spec '(csv-truncate . t))
     (kill-local-variable 'csv--jit-columns)
     (cursor-sensor-mode 1)
+    (when (fboundp 'header-line-indent-mode)
+      (header-line-indent-mode))
     (jit-lock-register #'csv--jit-align)
     (jit-lock-refontify))
    (t
