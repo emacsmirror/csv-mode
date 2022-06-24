@@ -4,7 +4,7 @@
 
 ;; Author: "Francis J. Wright" <F.J.Wright@qmul.ac.uk>
 ;; Maintainer: emacs-devel@gnu.org
-;; Version: 1.20
+;; Version: 1.21
 ;; Package-Requires: ((emacs "27.1") (cl-lib "0.5"))
 ;; Keywords: convenience
 
@@ -1528,10 +1528,11 @@ setting works better)."
     (delete-overlay ol)))
 
 (defun csv--jit-unalign (beg end)
-  (remove-text-properties beg end
-                          '(display nil csv--jit nil invisible nil
-                            cursor-sensor-functions nil csv--revealed nil))
-  (remove-overlays beg end 'csv--jit t))
+  (with-silent-modifications
+    (remove-text-properties beg end
+                            '( display nil csv--jit nil invisible nil
+                               cursor-sensor-functions nil csv--revealed nil))
+    (remove-overlays beg end 'csv--jit t)))
 
 (defun csv--jit-flush (beg end)
   "Cause all the buffer (except for the BEG...END region) to be re-aligned."
