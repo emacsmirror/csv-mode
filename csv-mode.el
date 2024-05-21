@@ -4,7 +4,7 @@
 
 ;; Author: "Francis J. Wright" <F.J.Wright@qmul.ac.uk>
 ;; Maintainer: emacs-devel@gnu.org
-;; Version: 1.23
+;; Version: 1.24
 ;; Package-Requires: ((emacs "27.1") (cl-lib "0.5"))
 ;; Keywords: convenience
 
@@ -106,6 +106,10 @@
 ;;   "Major mode for editing comma-separated value files." t)
 
 ;;; News:
+
+;; Since 1.24
+;; - New function `csv--unquote-value'.
+;; - New function `csv-parse-current-row'.
 
 ;; Since 1.21:
 ;; - New command `csv-insert-column'.
@@ -1399,6 +1403,26 @@ point is assumed to be at the beginning of the line."
 	  (if (memq (following-char) csv-separator-chars)
 	      (forward-char)))
 	(nreverse fields)))))
+
+(defun csv--unquote-value (value)
+  "Remove quotes around VALUE.
+If VALUE contains escaped quote characters, un-escape them.  If
+VALUE is not quoted, return it unchanged."
+  (save-match-data
+    (let ((quote-regexp (apply #'concat `("[" ,@csv-field-quotes "]"))))
+      (if-let (((string-match (concat "^\\(" quote-regexp "\\)\\(.*\\)\\(" quote-regexp "\\)$") value))
+               (quote-char (match-string 1 value))
+               ((equal quote-char (match-string 3 value)))
+               (unquoted (match-string 2 value)))
+          (replace-regexp-in-string (concat quote-char quote-char) quote-char unquoted)
+        value))))
+
+(defun csv-parse-current-row ()
+  "Parse the current CSV line.
+Return the field values as a list."
+  (save-mark-and-excursion
+    (goto-char (line-beginning-position))
+    (mapcar #'csv--unquote-value (csv--collect-fields (line-end-position)))))
 
 (defvar-local csv--header-line nil)
 (defvar-local csv--header-hscroll nil)
