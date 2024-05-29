@@ -1,10 +1,10 @@
 ;;; csv-mode.el --- Major mode for editing comma/char separated values  -*- lexical-binding: t -*-
 
-;; Copyright (C) 2003-2023  Free Software Foundation, Inc
+;; Copyright (C) 2003-2024  Free Software Foundation, Inc
 
 ;; Author: "Francis J. Wright" <F.J.Wright@qmul.ac.uk>
 ;; Maintainer: emacs-devel@gnu.org
-;; Version: 1.24
+;; Version: 1.25
 ;; Package-Requires: ((emacs "27.1") (cl-lib "0.5"))
 ;; Keywords: convenience
 
@@ -107,7 +107,11 @@
 
 ;;; News:
 
-;; Since 1.24
+;; Since 1.25:
+;; - The ASCII control character 31 Unit Separator can now be
+;;   recognized as a CSV separator by `csv-guess-separator'.
+
+;; Since 1.24:
 ;; - New function `csv--unquote-value'.
 ;; - New function `csv-parse-current-row'.
 
@@ -115,6 +119,12 @@
 ;; - New command `csv-insert-column'.
 ;; - New config var `csv-align-min-width' for `csv-align-mode'.
 ;; - New option `csv-confirm-region'.
+
+;; Since 1.20:
+;; - New command `csv-guess-set-separator' that automatically guesses
+;;   and sets the CSV separator of the current buffer.
+;; - New command `csv-set-separator' for setting the CSV separator
+;;   manually.
 
 ;; Since 1.9:
 ;; - `csv-align-mode' auto-aligns columns dynamically (on screen).
