@@ -1890,6 +1890,7 @@ When CUTOFF is passed, look only at the first CUTOFF number of characters."
                   text)))
       (when (and (not (gethash c chars))
                  (or (= c ?\t)
+                     (= c ?\C-_)
                      (and (not (member c '(?. ?/ ?\" ?')))
                           (not (member (get-char-code-property c 'general-category)
                                        '(Lu Ll Lt Lm Lo Nd Nl No Ps Pe Cc Co))))))
