@@ -52,6 +52,21 @@
     (should (equal (buffer-substring (point-min) (point))
                    "aaa,\"b,b\""))))
 
+(ert-deftest csv-tests-end-of-field-unclosed-quotes ()
+  (with-temp-buffer
+    (csv-mode)
+    (insert "a,b,c
+1,2,3
+1,2,\"
+\"1,
+\"")
+    (goto-char (point-min))
+    (while (not (eobp))
+      ;; Should not error
+      (csv-end-of-field)
+      (unless (eobp)
+        (forward-char)))))
+
 (ert-deftest csv-tests-beginning-of-field ()
   (with-temp-buffer
     (csv-mode)
