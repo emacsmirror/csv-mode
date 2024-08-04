@@ -170,5 +170,15 @@
   (should (equal (csv--unquote-value "|Hello, World|")
                  "|Hello, World|")))
 
+(ert-deftest csv-tests-guess-separator-avoid-comment ()
+  ;; bug#71042
+  (let ((testdata "###
+###
+Foo;Bar;Quux
+123;456;blah, blah
+"))
+    (message "Guessed separator: %c" (csv-guess-separator testdata))
+    (should-not (equal (csv-guess-separator testdata) ?#))))
+
 (provide 'csv-mode-tests)
 ;;; csv-mode-tests.el ends here

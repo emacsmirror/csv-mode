@@ -4,7 +4,7 @@
 
 ;; Author: "Francis J. Wright" <F.J.Wright@qmul.ac.uk>
 ;; Maintainer: emacs-devel@gnu.org
-;; Version: 1.25
+;; Version: 1.26
 ;; Package-Requires: ((emacs "27.1") (cl-lib "0.5"))
 ;; Keywords: convenience
 
@@ -106,6 +106,10 @@
 ;;   "Major mode for editing comma-separated value files." t)
 
 ;;; News:
+
+;; Since 1.26:
+;; - `csv-guess-separator' will no longer guess the comment-start
+;;    character as a potential separator character.
 
 ;; Since 1.25:
 ;; - The ASCII control character 31 Unit Separator can now be
@@ -1902,6 +1906,7 @@ When CUTOFF is passed, look only at the first CUTOFF number of characters."
                  (or (= c ?\t)
                      (= c ?\C-_)
                      (and (not (member c '(?. ?/ ?\" ?')))
+                          (not (= c (string-to-char csv-comment-start)))
                           (not (member (get-char-code-property c 'general-category)
                                        '(Lu Ll Lt Lm Lo Nd Nl No Ps Pe Cc Co))))))
         (puthash c t chars)))
