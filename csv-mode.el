@@ -1879,7 +1879,7 @@ separator automatically when visiting a buffer:
                ;; or so chars, but take more than we probably need to
                ;; minimize the chance of breaking the input in the
                ;; middle of a (long) row.
-               (min 8192 (point-max)))
+               (min (+ 8192 (point-min)) (point-max)))
               2048)))
     (when sep
       (csv-set-separator sep))))
@@ -1907,12 +1907,11 @@ When CUTOFF is passed, look only at the first CUTOFF number of characters."
                     (substring text 0 (min cutoff (length text)))
                   text)))
       (when (and (not (gethash c chars))
-                 (or (= c ?\t)
-                     (= c ?\C-_)
-                     (and (not (member c '(?. ?/ ?\" ?')))
-                          (not (= c (string-to-char csv-comment-start)))
-                          (not (member (get-char-code-property c 'general-category)
-                                       '(Lu Ll Lt Lm Lo Nd Nl No Ps Pe Cc Co))))))
+                 (or (memq c '(?\t ?\C-_))
+                     (not (or (memq c '(?. ?/ ?\" ?'))
+                              (= c (string-to-char csv-comment-start))
+                              (memq (get-char-code-property c 'general-category)
+                                    '(Lu Ll Lt Lm Lo Nd Nl No Ps Pe Cc Co))))))
         (puthash c t chars)))
     (hash-table-keys chars)))
 
@@ -1937,7 +1936,7 @@ Nazábal, and Charles Sutton: https://arxiv.org/abs/1811.11242."
              (insert text))
            (let ((groups (make-hash-table))
                  (chars-read 0))
-             (while (and (/= (point) (point-max))
+             (while (and (not (eobp))
                          (or (not cutoff)
                              (< chars-read cutoff)))
                (let* ((lep (line-end-position))
