@@ -254,14 +254,12 @@ FIELD-QUOTES should be a list of single-character strings."
 	   (symbol-value 'csv-mode-syntax-table)))
 	field-quotes))
 
-(defvar csv-comment-start nil
+(defvar-local csv-comment-start nil
   "String that starts a comment line, or nil if no comment syntax.
 Such comment lines are ignored by CSV mode commands.
 This variable is buffer local; its default value is that of
 `csv-comment-start-default'.  It is set by the function
 `csv-set-comment-start' -- do not set it directly!")
-
-(make-variable-buffer-local 'csv-comment-start)
 
 (defcustom csv-comment-start-default "#"
   "String that starts a comment line, or nil if no comment syntax.
@@ -372,19 +370,19 @@ CSV mode provides the following specific keyboard key bindings:
   ;; Set syntax for field quotes:
   (csv-set-quote-syntax csv-field-quotes)
   ;; Make sexp functions apply to fields:
-  (set (make-local-variable 'forward-sexp-function) #'csv-forward-field)
+  (setq-local forward-sexp-function #'csv-forward-field)
   (csv-set-comment-start csv-comment-start)
   ;; Font locking -- separator plus syntactic:
   (setq font-lock-defaults '(csv-font-lock-keywords))
   (setq-local jit-lock-contextually nil) ;Each line should be independent.
   (if csv-invisibility-default (add-to-invisibility-spec 'csv))
   ;; Mode line to support `csv-field-index-mode':
-  (set (make-local-variable 'mode-line-position)
-       (pcase mode-line-position
-         (`(,(or (pred consp) (pred stringp)) . ,_)
-          `(,@mode-line-position ,csv-mode-line-format))
-         (_ `("" ,mode-line-position ,csv-mode-line-format))))
-  (set (make-local-variable 'truncate-lines) t)
+  (setq-local mode-line-position
+              (pcase mode-line-position
+                (`(,(or (pred consp) (pred stringp)) . ,_)
+                 `(,@mode-line-position ,csv-mode-line-format))
+                (_ `("" ,mode-line-position ,csv-mode-line-format))))
+  (setq-local truncate-lines t)
   ;; Enable or disable `csv-field-index-mode' (could probably do this
   ;; a bit more efficiently):
   (csv-field-index-mode (symbol-value 'csv-field-index-mode)))
@@ -396,8 +394,8 @@ It must be either a string or nil."
    (list (edit-and-eval-command
 	  "Comment start (string or nil): " csv-comment-start)))
   ;; Paragraph means a group of contiguous records:
-  (set (make-local-variable 'paragraph-separate) "[[:space:]]*$") ; White space.
-  (set (make-local-variable 'paragraph-start) "\n");Must include \n explicitly!
+  (setq-local paragraph-separate "[[:space:]]*$") ; White space.
+  (setq-local paragraph-start "\n");Must include \n explicitly!
   ;; Remove old comment-start/end if available
   (with-syntax-table text-mode-syntax-table
     (when comment-start
@@ -410,7 +408,7 @@ It must be either a string or nil."
   (when string
     (setq paragraph-separate (concat paragraph-separate "\\|" string)
 	  paragraph-start (concat paragraph-start "\\|" string))
-    (set (make-local-variable 'comment-start) string)
+    (setq-local comment-start string)
     (modify-syntax-entry
      (string-to-char string) "<" csv-mode-syntax-table)
     (modify-syntax-entry ?\n ">" csv-mode-syntax-table))
@@ -536,11 +534,11 @@ Assumes point is at beginning of line."
 (defun csv-interactive-args (&optional type)
   "Get arg or field(s) and region interactively, offering sensible defaults.
 Signal an error if the buffer is read-only.
-If TYPE is noarg then return a list (beg end).
-Otherwise, return a list (arg beg end), where arg is:
+If TYPE is `noarg' then return a list (beg end).
+Otherwise, return a list (ARG BEG END), where ARG is:
   the raw prefix argument by default;
-  a single field index if TYPE is single;
-  a list of field indices or index ranges if TYPE is multiple.
+  a single field index if TYPE is `single';
+  a list of field indices or index ranges if TYPE is `multiple'.
 Field defaults to the current prefix arg; if not set, prompt user.
 
 A field index list consists of positive or negative integers or ranges,
@@ -557,12 +555,9 @@ The default field when read interactively is the current field."
 	  (if (not (use-region-p))
 	      ;; Set region automatically:
 	      (save-excursion
-                (if arg
-                    (beginning-of-line)
-                  (let ((lbp (line-beginning-position)))
-                    (while (re-search-backward csv-separator-regexp lbp 1)
-                      ;; Move as far as possible, i.e. to beginning of line.
-                      (setq default-field (1+ default-field)))))
+                (unless arg
+                  (setq default-field (csv--field-index)))
+                (beginning-of-line)
                 (if (csv-not-looking-at-record)
                     (error "Point must be within CSV records"))
 		(let ((startline (point)))
@@ -862,11 +857,9 @@ which case extend the record as necessary."
 
 (defvar csv-field-index-idle-timer nil)
 
-(defvar csv-field-index-string nil)
-(make-variable-buffer-local 'csv-field-index-string)
+(defvar-local csv-field-index-string nil)
 
-(defvar csv-field-index-old nil)
-(make-variable-buffer-local 'csv-field-index-old)
+(defvar-local csv-field-index-old nil)
 
 (define-minor-mode csv-field-index-mode
   "Toggle CSV-Field-Index mode.
