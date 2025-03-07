@@ -1421,10 +1421,10 @@ If VALUE contains escaped quote characters, un-escape them.  If
 VALUE is not quoted, return it unchanged."
   (save-match-data
     (let ((quote-regexp (apply #'concat `("[" ,@csv-field-quotes "]"))))
-      (if-let (((string-match (concat "^\\(" quote-regexp "\\)\\(.*\\)\\(" quote-regexp "\\)$") value))
-               (quote-char (match-string 1 value))
-               ((equal quote-char (match-string 3 value)))
-               (unquoted (match-string 2 value)))
+      (if-let* (((string-match (concat "^\\(" quote-regexp "\\)\\(.*\\)\\(" quote-regexp "\\)$") value))
+                (quote-char (match-string 1 value))
+                ((equal quote-char (match-string 3 value)))
+                (unquoted (match-string 2 value)))
           (replace-regexp-in-string (concat quote-char quote-char) quote-char unquoted)
         value))))
 
